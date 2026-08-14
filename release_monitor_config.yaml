@@ -1,0 +1,13 @@
+refresh_interval: 2  # Refresh interval in seconds (1 hour)
+
+repositories:
+    - name: netbird
+      owner: netbirdio
+      url: https://github.com/netbirdio/netbird
+      version: 0.0.0
+
+      on_release: |
+        echo "New release detected for example-repo!"
+        echo "Current version: {{ current_version }}"
+        echo "New version: {{ new_version }}"
+        # Add your custom script logic here
