@@ -88,9 +88,9 @@ uninstall.sh
 Download and extract the archive and run the installer as root:
 
 ```bash
-wget https://github.com/mihpikulin/Release-Monitor/releases/download/v0.2.0/release_monitor
-tar -xzf release-monitor-v0.2.0.tar.gz
-cd release-monitor-v0.2.0
+wget https://github.com/mihpikulin/Release-Monitor/releases/download/v0.2.0/release-monitor_v0.2.0.tar.gz
+tar -xzf release-monitor_v0.2.0.tar.gz
+cd release-monitor_v0.2.0
 sudo ./install.sh
 sudo release-monitor start
 ```
