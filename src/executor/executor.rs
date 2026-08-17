@@ -1,4 +1,4 @@
-use std::process::Command;
+use tokio::process::Command;
 
 pub struct Executor {
     command: String,
@@ -9,11 +9,12 @@ impl Executor {
         Self { command }
     }
 
-    pub fn execute(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn execute(&self) -> Result<(), Box<dyn std::error::Error>> {
         let status = Command::new("sh")
             .arg("-c")
             .arg(self.command.clone())
-            .status()?;
+            .status()
+            .await?;
 
         if !status.success() {
             return Err(format!("[ERROR] Command failed with status: {}", status).into());

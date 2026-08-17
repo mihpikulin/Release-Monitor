@@ -1,2 +1,10 @@
 /target
 /.idea
+/.vscode
+*.db
+*.sqlite
+*.sqlite3
+*.tar.gz
+.env
+/release-monitor_v0.2.0
+

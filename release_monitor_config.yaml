@@ -1,13 +1,16 @@
-refresh_interval: 2  # Refresh interval in seconds (1 hour)
+# Usage:
+#refresh_interval: 3600                                 # Refresh interval in seconds. Describes refresh rate of requests to remote repository on Github
+#
+#repositories:                                          # Describes a list of repositories to be monitored
+#  - name: netbird                                      # Starting with name and owner of a repo (Example: https://github.com/netbirdio/netbird, https://github.com/<owner>/<name>)
+#    owner: netbirdio
+#
+#    on_release: |                                      # Describes a banch of cammands to be executed when detecting new release
+#      echo "New release detected for example-repo!"
+#      echo "Current version: {{ current_version }}"
+#      echo "New version: {{ new_version }}"
+#      # Add your custom script logic here
 
-repositories:
-    - name: netbird
-      owner: netbirdio
-      url: https://github.com/netbirdio/netbird
-      version: 0.0.0
+refresh_interval: 3600
 
-      on_release: |
-        echo "New release detected for example-repo!"
-        echo "Current version: {{ current_version }}"
-        echo "New version: {{ new_version }}"
-        # Add your custom script logic here
+repositories: []

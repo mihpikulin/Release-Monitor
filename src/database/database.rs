@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use rusqlite::Connection;
 use crate::{Config};
-use crate::common::Repository;
+use crate::common::{Repository, RepositoryConfig};
 
 pub struct Database {
     database: PathBuf,
@@ -16,7 +16,6 @@ impl Database {
                     id INTEGER PRIMARY KEY,
                     name TEXT NOT NULL,
                     owner TEXT NOT NULL,
-                    url TEXT NOT NULL,
                     release TEXT NOT NULL,
                     on_release TEXT NOT NULL
             )",
@@ -27,7 +26,7 @@ impl Database {
     }
 
     pub fn sync_with_config(&self, config: &Config) -> Result<(), Box<dyn std::error::Error>> {
-        let config_list: Vec<Repository> = config.repositories.clone();
+        let config_list: Vec<RepositoryConfig> = config.repositories.clone();
         let db_list: Vec<Repository> = self.get_repositories()?;
 
         // Check for new repositories in the config that are not in the database and insert them
@@ -36,13 +35,11 @@ impl Database {
                 |r|
                     r.name == repo.name &&
                         r.owner == repo.owner &&
-                        r.url == repo.url &&
-                        r.on_release == repo.on_release &&
-                        r.version == repo.version
+                        r.on_release == repo.on_release
             ) {
                 self.connection.execute(
-                    "INSERT INTO repositories (name, owner, url, release, on_release) VALUES (?1, ?2, ?3, ?4, ?5)",
-                    &[&repo.name, &repo.owner, &repo.url, &repo.version, &repo.on_release],
+                    "INSERT INTO repositories (name, owner, release, on_release) VALUES (?1, ?2, ?3, ?4)",
+                    &[&repo.name, &repo.owner, "0.0.0", &repo.on_release],
                 )?;
             }
         }
@@ -53,13 +50,11 @@ impl Database {
                 |r|
                     r.name == repo.name &&
                         r.owner == repo.owner &&
-                        r.url == repo.url &&
-                        r.on_release == repo.on_release &&
-                        r.version == repo.version
+                        r.on_release == repo.on_release
             ) {
                 self.connection.execute(
-                    "DELETE FROM repositories WHERE name = ?1 AND owner = ?2 AND url = ?3 AND on_release = ?4 AND release = ?5",
-                    &[&repo.name, &repo.owner, &repo.url, &repo.on_release, &repo.version],
+                    "DELETE FROM repositories WHERE name = ?1 AND owner = ?2 AND on_release = ?3 AND release = ?4",
+                    &[&repo.name, &repo.owner, &repo.on_release, &repo.version],
                 )?;
             }
         }

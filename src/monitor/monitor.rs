@@ -1,9 +1,9 @@
-use tokio::time::{sleep, Duration};
-use std::path::PathBuf;
-use crate::common::Release;
-use crate::executor::Executor;
-use crate::database::Database;
 use crate::Config;
+use crate::common::Release;
+use crate::database::Database;
+use crate::executor::Executor;
+use colored::Colorize;
+use tokio::time::{Duration, sleep};
 
 pub struct Monitor {
     config: Config,
@@ -22,13 +22,6 @@ impl Monitor {
 
     pub async fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         // Initialize the database and sync with the config
-        self.database = match Database::new(PathBuf::from("repositories.db"), self.config.clone()) {
-            Ok(db) => {
-                println!("[INFO] Database initialized successfully");
-                db
-            },
-            Err(e) => return Err(e),
-        };
         match self.database.sync_with_config(&self.config) {
             Ok(()) => println!("[INFO] Database synchronized successfully"),
             Err(e) => return Err(e),
@@ -42,13 +35,16 @@ impl Monitor {
                         println!("[INFO] Fetched latest release for {}: {}", repo.name, release.tag_name);
                         release
                     },
-                    Err(e) => return Err(e)
+                    Err(e) => {
+                        println!("[ERROR] Failed to fetch release for {}/{}: {}. Continuing...", repo.owner, repo.name, e);
+                        continue;
+                    }
                 };
 
                 let executor = Executor::new(repo.on_release.clone());
                 if release.tag_name != repo.version {
                     println!("[INFO] New release detected for {}: {}", repo.name, release.tag_name);
-                    match executor.execute() {
+                    match executor.execute().await {
                         Ok(()) => println!("[INFO] Executed command for {} successfully", repo.name),
                         Err(e) => return Err(e),
                     }
@@ -79,7 +75,17 @@ impl Monitor {
         Ok(release)
     }
 
-    pub fn stop(&mut self) {
+    pub async fn stop(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         self.running = false;
+        Ok(())
+    }
+
+    pub async fn get_status(&self) -> Result<(), Box<dyn std::error::Error>> {
+        if self.running {
+            println!("{}", "Active".green());
+        } else {
+            println!("[INFO] Monitor is stopped");
+        }
+        Ok(())
     }
 }
