@@ -3,7 +3,7 @@
 Release Monitor is a small Rust service that watches GitHub repositories for new releases and runs a configured shell command when a release tag changes. It stores the last observed tag in SQLite, can run interactively, and includes a systemd service plus installation scripts for Linux.
 
 > [!WARNING]
-> Release commands are passed directly to `sh -c`. Treat the configuration file as executable code, restrict who can edit it, and never insert untrusted values into `on_release`.
+> Release Monitor and its `on_release` commands run with root privileges when installed as a system service. Commands are passed directly to `sh -c`. Treat the configuration file as root-executable code, restrict who can edit it, and never insert untrusted values into `on_release`.
 
 ## Features
 
@@ -36,7 +36,7 @@ This means a newly configured repository normally triggers its command on the fi
 - Rust 1.85 or newer with Cargo (for building from source)
 - Network access to `api.github.com`
 - SQLite development libraries when building `rusqlite` without its `bundled` feature
-- Root privileges for system-wide installation and systemd service management
+- Root privileges for installation and for running Release Monitor
 
 The monitor currently uses unauthenticated GitHub API requests. GitHub rate limits therefore apply, so choose the polling interval with the number of repositories in mind.
 
@@ -67,7 +67,7 @@ repositories:
 | `repositories[].name` | string | GitHub repository name |
 | `repositories[].on_release` | string | Shell program passed to `sh -c` when the latest tag changes |
 
-The command runs as the `release-monitor` service user when installed with the supplied systemd unit. Use absolute paths because the service has a minimal environment and uses `/var/lib/release-monitor` as its working directory.
+The service and every configured `on_release` command run as root. Use absolute paths because the service has a minimal environment and uses `/var/lib/release-monitor` as its working directory.
 
 `on_release` is currently executed verbatim. Placeholder strings such as `{{ current_version }}` and `{{ new_version }}` are **not** interpolated by the application.
 
@@ -85,7 +85,7 @@ install.sh
 uninstall.sh
 ```
 
-Download and extract the archive and run the installer as root:
+Download and extract the archive, then run the installer as root. The installed `release-monitor` commands must also be run as root:
 
 ```bash
 wget https://github.com/mihpikulin/Release-Monitor/releases/download/v0.2.0/release_monitor
@@ -97,9 +97,8 @@ sudo release-monitor start
 
 Replace `<version>` and `<architecture>` with the values used by the downloaded release. The exact archive and extracted-directory names may vary between releases.
 
-The installer:
+The installer runs with root privileges and:
 
-- creates the system user and group `release-monitor`;
 - installs the binary at `/usr/local/bin/release-monitor`;
 - installs or preserves `/etc/release-monitor/config.yaml`;
 - creates `/var/lib/release-monitor` for persistent state;
@@ -180,7 +179,7 @@ sudo release-monitor status
 
 Both `--name` and `--owner` are required by `remove`. Every configuration entry matching that owner/name pair is removed. The command reports an error without changing the configuration when no match exists.
 
-The `--config` option affects the `run` command. Other commands, including `add` and `remove`, operate on the fixed system paths. All commands currently initialize/check `/etc/release-monitor` and `/var/lib/release-monitor` before dispatch, so even a foreground run generally needs permission to access those locations.
+The `--config` option affects the `run` command. Other commands, including `add` and `remove`, operate on the fixed system paths. Run all installed commands with root privileges because they initialize or check `/etc/release-monitor` and `/var/lib/release-monitor` before dispatch. A foreground `run` also executes its configured `on_release` commands as root.
 
 ## Files and directories
 
@@ -202,7 +201,7 @@ cd release-monitor-<version>-<architecture>
 sudo ./uninstall.sh
 ```
 
-It stops and disables the service, removes the installed binary and unit, and removes the service account. It asks separately before deleting configuration and application data, allowing `/etc/release-monitor` and `/var/lib/release-monitor` to be preserved.
+It stops and disables the service and removes the installed binary and unit. It asks separately before deleting configuration and application data, allowing `/etc/release-monitor` and `/var/lib/release-monitor` to be preserved.
 
 ## Current limitations
 
